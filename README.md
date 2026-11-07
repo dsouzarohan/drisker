@@ -25,8 +25,8 @@ not implemented. Proposed future commands are not yet CLI contracts.
 
 Windows x86_64 is the initial product target. macOS ARM64 is the primary
 development platform and a compilation/test target; that does not establish
-macOS feature support. CI is configured for native Windows and macOS runners.
-Its results must be checked in GitHub Actions before claiming either passes.
+macOS feature support. Native Windows and macOS runners have passed the
+[foundation CI checks](https://github.com/dsouzarohan/drisker/actions/runs/42411773487).
 Linux support is deferred.
 
 ## Direction
@@ -39,7 +39,7 @@ verification. Discovery will use supported APIs and traceable sources, without
 LLMs, crawlers, or speculative device matching.
 
 See [ROADMAP.md](ROADMAP.md) for milestones and [PLAN.md](PLAN.md) for the next
-small increment and outstanding bootstrap checks.
+small increment.
 
 ## Development
 
@@ -70,9 +70,11 @@ cargo build --locked
 
 Bootstrap verification passes on native Apple Silicon with Rust/Cargo 1.99.1:
 formatting, Clippy with warnings denied, 3 unit tests, 4 integration tests,
-build, help, and version. Hosted CI and native Windows execution remain
-unverified. `Cargo.lock` is included for this binary application; retain it in
-version control. CI uses `--locked` to prevent unintended dependency changes.
+build, help, and version. Hosted CI also passes on native Windows x86_64 and
+macOS ARM64. Windows device and filesystem API integrations do not exist yet
+and have not been validated. `Cargo.lock` is included for this binary
+application; retain it in version control. CI uses `--locked` to prevent
+unintended dependency changes.
 
 Unit tests check the CLI definition and parsing. Integration tests execute the
 binary and check output streams, exit status, help, version, and rejection of
@@ -94,11 +96,13 @@ behavior. GitHub Actions supplies an additional native check on each platform.
 ```text
 Cargo.toml                         Single binary crate; clap is the only direct dependency
 Cargo.lock                         Resolved dependency versions for reproducible builds
+LICENSE                            MIT license
 src/main.rs                        CLI entry point and parser unit tests
 tests/cli.rs                       Binary integration tests
 .github/workflows/ci.yml            Stable Rust checks on Windows and macOS
 PLAN.md                            Immediate increment and verification status
 ROADMAP.md                         Feature-level milestones
+AGENTS.md                          Agent workflow and session continuity
 docs/architecture.md               Boundaries, data flow, and testing strategy
 docs/adr/0001-initial-architecture.md
                                    Initial architectural decision
@@ -131,5 +135,4 @@ data-model, and OS API choices without adding abstractions solely for teaching.
 CLI metadata follows the [clap derive documentation](https://docs.rs/clap/latest/clap/_derive/_tutorial/index.html).
 The CI runner selection follows [GitHub's native runner reference](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
 
-A project license has not been selected yet. Open-source distribution requires
-that decision and a corresponding license file before public release.
+Drisker is licensed under the [MIT license](LICENSE).

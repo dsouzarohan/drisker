@@ -21,13 +21,37 @@ diffs understandable without turning every task into a tutorial.
 
 - `PLAN.md` holds the immediate increment: small, verifiable tasks. Update
   checkboxes as work completes; refresh the plan when an increment finishes.
+  It is the only execution plan; do not create parallel feature-plan files.
 - `ROADMAP.md` holds feature-level milestones, not detailed implementation tasks.
+  Keep future work there until it becomes the current increment in `PLAN.md`.
 - `docs/architecture.md` describes boundaries and testing strategy.
 - `docs/adr/` records meaningful architectural decisions.
 - Docs follow code: update affected instructions and documentation in the same
   change. Distinguish local checks from hosted CI and native platform results.
 - Keep shared guidance in the repository, independent of any particular agent.
   Add scripts or supporting documents when there is a concrete need.
+
+## Session continuity
+
+- At the start of a conversation, read `PLAN.md` and `README.md`, then the
+  relevant roadmap milestone. Check the branch, working tree, and recent Git
+  history before editing; do not assume the previous session committed or
+  merged its changes.
+- Read `docs/architecture.md` and relevant ADRs when a task touches their
+  boundaries. Keep standing conventions here rather than repeating them in
+  each plan.
+- Treat tracked repository documents as shared project memory. Agent-local
+  memory, if used, should point to these sources rather than become a separate
+  authority for project status or decisions.
+- Before handing work off, update `PLAN.md` with completed outcomes, validation
+  evidence, open decisions or blockers, and the next concrete action. Keep it
+  concise enough for the next session to resume without the chat transcript.
+- Use Codex's native generated memory for local recall when available. Do not
+  create memory files in the codebase or manually maintain Codex's generated
+  store. Keep current tasks and required project guidance in the tracked docs.
+- When an increment finishes, retain a brief outcome and evidence under its
+  roadmap milestone, then replace `PLAN.md` with the next increment. Git and
+  PRs retain detailed history; do not grow the plan into a session log.
 
 ## Implementation boundaries
 

@@ -2,18 +2,24 @@
 
 This is a revisable feature backlog, not a release schedule. Milestones describe
 intended outcomes, not implemented functionality. Only the CLI source
-foundation exists today; local checks pass, while native Windows and hosted CI
-verification remain pending (see PLAN.md).
+foundation exists today; local checks and native Windows/macOS hosted CI pass
+(see PLAN.md). Product features remain planned.
 
 ## 1. Repository foundation and developer experience
 
+- **Status:** Complete in this increment; MIT licensing and continuity updates
+  accompany the already-published CLI foundation.
 - **Goal:** An understandable, reproducible starting point.
 - **Capabilities:** Minimal CLI, documentation, unit/integration testing,
   stable Rust formatting/lint/build checks, native Windows and macOS CI.
 - **Outcome:** Contributors can build, test, and understand the project.
-- **Dependencies/questions:** Observe hosted CI, retain Cargo.lock in version
-  control, choose a license before public release; establish native Windows access when
-  integration work begins.
+- **Progress:** CLI foundation and agent instructions are published, including
+  [PR #1](https://github.com/dsouzarohan/drisker/pull/1). Native Windows/macOS
+  [foundation CI](https://github.com/dsouzarohan/drisker/actions/runs/42411773487)
+  passes. MIT licensing is recorded in LICENSE and Cargo.toml. AGENTS.md defines
+  startup and handoff practice; native Codex memory stays outside the repository.
+- **Dependencies/questions:** Establish remote native Windows access when
+  Windows API integration begins; no remote execution framework is needed now.
 
 ## 2. Basic read-only disk scanning
 
