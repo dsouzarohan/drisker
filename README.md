@@ -104,12 +104,14 @@ cargo test --locked
 cargo build --locked
 ```
 
-Local Apple Silicon checks use Rust/Cargo 1.99.1: formatting, Clippy with
-warnings denied, tests, build, help, and version. Scanner CI results are tracked
-in [PLAN.md](PLAN.md); the earlier
-[foundation CI](https://github.com/dsouzarohan/drisker/actions/runs/42411773487)
-does not verify scanner behavior. `Cargo.lock` is committed and CI uses
-`--locked` to prevent unintended dependency changes.
+Local Apple Silicon checks pass with Rust/Cargo 1.99.1: formatting, Clippy
+with warnings denied, 24 unit tests, 9 binary integration tests, build, help,
+version, and a JSON scan. Native Windows x86_64 and macOS ARM64
+[scanner CI](https://github.com/dsouzarohan/drisker/actions/runs/42418864283)
+passes formatting, Clippy, tests, and builds at `6158e1a`, including the native
+Windows junction fixture. Platform-gated tests make test counts differ by OS.
+`Cargo.lock` is committed and CI uses `--locked` to prevent unintended dependency
+changes.
 
 Tests use controlled temporary directories and deterministic metadata/enumeration
 failures. They cover counting, hard links, partial results, limits, overflow,
@@ -123,8 +125,8 @@ unsandboxed test run, not administrator access.
 
 ### macOS and Windows workflow
 
-Edit and run portable checks on the Mac Mini. When Windows API integration
-begins, use a checkout of the same revision on the Windows PC and run native
+Edit and run portable checks on the Mac Mini. For additional Windows API work,
+use a checkout of the same revision on the Windows PC and run native
 builds and tests over SSH while that machine is booted into Windows. Configure
 SSH and Rust on that machine separately; no remote execution framework is
 included. A macOS build or a Windows cross-build cannot validate native Windows
@@ -155,7 +157,8 @@ docs/adr/0001-initial-architecture.md
 
 ## Safety
 
-Read-only inspection is the default. No system mutation capabilities exist. An available update does not establish that it should be
+Read-only inspection is the default. No system mutation capabilities exist.
+An available update does not establish that it should be
 installed; occupied storage does not establish that it is safe to delete.
 
 Future maintenance must discover, inspect, explain, verify, present a concrete

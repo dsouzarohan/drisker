@@ -1,9 +1,10 @@
 # Roadmap
 
-This is a revisable feature backlog, not a release schedule. Milestones distinguish completed capabilities from intended outcomes. The CLI
-foundation is merged; the first scanner is implemented on its feature branch
-with local checks passing and native CI pending (see PLAN.md). Later features
-remain planned.
+This is a revisable feature backlog, not a release schedule. Milestones
+distinguish completed capabilities from intended outcomes. The CLI
+foundation is merged; the first scanner is implemented and verified in
+[PR #3](https://github.com/dsouzarohan/drisker/pull/3), awaiting merge. Later
+features remain planned (see PLAN.md for the next action).
 
 ## 1. Repository foundation and developer experience
 
@@ -29,10 +30,14 @@ remain planned.
 - **Progress:** The [first scanner contract](docs/disk-scan-contract.md) defines
   counting, partial results, live observations, traversal boundaries, output,
   and limits. Sequential traversal, checked aggregation, text/JSON output, and
-  controlled fixtures are implemented; local checks pass.
-- **Status:** Implementation complete; native CI verification pending.
-- **Dependencies/questions:** Verify the native Windows junction fixture and
-  Windows/macOS CI before closing the increment. Benchmark before parallelism.
+  controlled fixtures are implemented. Local Apple Silicon checks pass (24 unit
+  and 9 integration tests). Native Windows x86_64/macOS ARM64
+  [scanner CI](https://github.com/dsouzarohan/drisker/actions/runs/42418864283)
+  passes at `6158e1a`, including Windows junction metadata/skip/root checks.
+- **Status:** Increment complete in PR #3; awaiting diff review and merge.
+- **Dependencies/questions:** Arbitrary reparse tags, cloud/network providers,
+  mounted-volume fixtures, and concurrent replacement are not comprehensively
+  verified. These limitations remain explicit. Benchmark before parallelism.
 
 ## 3. Filesystem metadata and accounting correctness
 

@@ -2,66 +2,44 @@
 
 ## State at handoff
 
-The MIT-licensed foundation is merged at `3ed1da4` (PR #2). The feature branch
-implements `drisker disk scan <path> [--json]` in one binary crate, version
-`0.1.0`. Driver discovery and maintenance remain unimplemented.
+The first read-only disk scanner increment is complete in
+[PR #3](https://github.com/dsouzarohan/drisker/pull/3), awaiting review and merge.
+The MIT-licensed foundation remains merged on main at `3ed1da4` (PR #2).
+Check Git and PR state before resuming; the scanner is on
+`feat/read-only-disk-scan`, not yet on main. Version remains `0.1.0`.
 
-AGENTS.md holds standing workflow instructions. This is the only execution plan;
-ROADMAP.md holds future features and completed milestone summaries. Codex's
-native generated memory supplies local recall outside the codebase. Do not
-create repository memory files or parallel feature plans.
+`drisker disk scan <path> [--json]` reports observed logical bytes and counts,
+with explicit skip policy, partial results, checked counters, and bounded
+traversal/diagnostics. Domain results and rendering are separate. See the
+[contract](docs/disk-scan-contract.md), [architecture](docs/architecture.md), and
+[completed milestone](ROADMAP.md#2-basic-read-only-disk-scanning) for details.
+Driver discovery and maintenance remain unimplemented.
 
-## Next increment: first read-only disk scan
-
-**Status:** Contract, model, traversal, output, and fixtures implemented.
-Local checks pass. Native Windows/macOS CI is the remaining verification step;
-do not confuse earlier foundation CI with scanner validation.
-
-**Goal:** `drisker disk scan <path>` reports observed logical bytes and entry
-counts beneath a directory, with clear limitations and partial-result reporting.
-It does not claim allocated disk usage or identify safe-to-delete data.
-
-1. [x] Define the initial behavior contract with small output examples: accepted
-   roots, logical-size accounting, hard-link counting, links/reparse points,
-   volume boundaries, changes during scanning, and fatal versus partial results.
-   Set exit statuses, text/JSON fields, and diagnostic limits before coding.
-2. [x] Introduce a focused disk module with request/result types and checked
-   aggregation. Keep application results separate from rendering; retain one
-   crate and avoid speculative platform traits or a full tree representation.
-3. [ ] Implement sequential read-only traversal with explicit failure reporting.
-   Do not follow links or Windows reparse points whose traversal safety is not
-   established. Verify metadata handling on native Windows. Resolve depth and
-   resource-limit behavior without silently omitting subtrees.
-4. [x] Expose the working `disk scan <path>` command with text and `--json`
-   rendering from the same result. Add serialization dependencies only as
-   needed; keep progress, styling, and diagnostics off JSON stdout.
-5. [x] Add controlled temporary fixtures for empty/nested directories, known
-   byte totals, spaces/Unicode, links, invalid roots, and partial results.
-   Cover overflow and error-limit behavior deterministically. Gate native
-   cases and avoid reliance on installed hardware or administrator privileges.
-6. [ ] Run formatting, Clippy, tests, and builds locally and in native
-   Windows/macOS CI. Document counting rules and unverified edge cases in README
-   and architecture docs; record the outcome before choosing the next increment.
-
-Largest-entry views, allocated-size accounting, interactive exploration,
-categorization, and driver work remain later roadmap features. Correctness
-comes before concurrency or caching; measure before optimizing.
-
-## Validation and next action
+## Verification evidence
 
 - Local Apple Silicon / Rust 1.99.1: formatting, Clippy with warnings denied,
   24 unit tests, 9 binary integration tests, build, help, version, and a JSON
-  scan of `src` pass with locked dependencies.
-- The Unix socket fixture requires an unsandboxed test run; it passes with
-  normal user permissions. No administrator access is needed.
-- Unit tests inject metadata, enumeration, depth, and overflow failures;
-  the same traversal loop is used in production. Native Windows includes a
-  junction fixture; native CI results are pending.
-- [PR #3](https://github.com/dsouzarohan/drisker/pull/3) contains the scanner diff.
-  Initial hosted macOS checks pass; native Windows junction classification and
-  traversal tests pass. Windows found a CRLF-sensitive documentation-example
-  test, now normalized before extraction. Next: verify the corrected revision
-  in native CI and record the outcome before refreshing this plan.
-- Unverified scope: arbitrary reparse tags, cloud/network providers, real
-  mounted-volume boundaries, and concurrent path replacement. The contract
-  explicitly describes live observations and no physical containment guarantee.
+  scan of `src` pass with locked dependencies. The Unix socket fixture passes
+  outside the local sandbox with normal user permissions; no elevation needed.
+- Native Windows x86_64 and macOS ARM64
+  [scanner CI](https://github.com/dsouzarohan/drisker/actions/runs/42418864283)
+  passes formatting, Clippy, tests, and builds at `6158e1a`. Windows verifies
+  junction reparse classification, skipped traversal, and root rejection.
+- Documentation links, JSON example syntax, and whitespace pass local checks.
+- Known limits: arbitrary reparse tags, cloud/network providers, real mounted
+  volumes, and concurrent replacement are not comprehensively verified. Results
+  are live observations, not snapshots or physical-containment guarantees.
+
+## Next increment: select the first filesystem-accounting extension
+
+**Status:** Scope not selected; no next feature implementation started.
+
+1. [ ] Review the scanner diff in PR #3 and resolve any findings before merge.
+2. [ ] Select one concrete requirement from roadmap milestone 3, such as
+   allocated-size reporting or identity-based hard-link accounting. Define its
+   behavior and native Windows fixture requirements before adding APIs.
+3. [ ] Replace this selection plan with small implementation/verification tasks
+   for the chosen requirement.
+
+AGENTS.md holds standing workflow instructions. This is the only execution plan;
+ROADMAP.md retains milestone outcomes and later features.
