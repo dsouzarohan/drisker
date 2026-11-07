@@ -95,6 +95,7 @@ No scan model, tree representation, Windows bindings, error taxonomy, JSON
 schema, cancellation design, or performance target is implemented. Choose them
 with the first concrete requirements. Prioritize correctness; use profiling
 and benchmarks before parallelism or caching. No minimum Rust version beyond
-using current stable is promised. The license remains undecided. Local checks
-pass with locked dependencies; native Windows and hosted CI verification
-remain pending in PLAN.md.
+using current stable is promised. The project uses the MIT license. Local checks
+pass with locked dependencies, as do the native Windows/macOS hosted CI checks
+linked from PLAN.md. Windows API integrations remain future work requiring
+their own native tests.

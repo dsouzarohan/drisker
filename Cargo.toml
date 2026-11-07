@@ -3,6 +3,7 @@ name = "drisker"
 version = "0.1.0"
 edition = "2024"
 description = "A Windows-first system inspection and maintenance CLI"
+license = "MIT"
 publish = false
 
 [dependencies]
