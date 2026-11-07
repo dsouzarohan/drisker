@@ -13,25 +13,61 @@ opaque recommendations or performance optimization claims.
 
 ## Current status
 
-This is the repository foundation, not a working system inspector. The CLI
-currently provides only:
+The CLI provides:
 
-- `drisker --help` (or `-h`).
-- `drisker --version` (or `-V`).
+- `drisker --help` (or `-h`) and `drisker --version` (or `-V`).
 - Help when invoked without arguments, and errors for unsupported arguments.
+- `drisker disk scan <path>` with text output or `--json`.
 
-Disk scanning, driver discovery, JSON output, and maintenance operations are
-not implemented. Proposed future commands are not yet CLI contracts.
+Driver discovery and maintenance operations are not implemented. Windows x86_64
+is the product target; macOS ARM64 is the development and portable-scanner test
+platform. Linux support is deferred.
 
-Windows x86_64 is the initial product target. macOS ARM64 is the primary
-development platform and a compilation/test target; that does not establish
-macOS feature support. Native Windows and macOS runners have passed the
-[foundation CI checks](https://github.com/dsouzarohan/drisker/actions/runs/42411773487).
-Linux support is deferred.
+## Read-only disk scan
+
+```sh
+cargo run --locked -- disk scan ./src
+cargo run --locked -- disk scan ./src --json
+```
+
+Supply exactly one directory. Quote paths containing spaces. Relative roots use
+the invocation's working directory; reported paths retain the supplied root.
+File roots and root links/reparse points are rejected. No administrator access
+is requested.
+
+The scanner counts regular-file names and sums their observed logical lengths.
+The root is excluded from directory counts. Hard links count once per name;
+sparse/compressed files contribute logical lengths. This does not measure
+allocated or reclaimable storage. Links, all Windows reparse points (including
+junctions), and special entries are counted as skips and never traversed.
+Ordinary mounts are traversed, even across volumes; there is no same-volume
+option. These are live observations, with no snapshot guarantee or protection
+against concurrent path replacement.
+
+Unreadable or disappearing entries produce partial results while reachable
+siblings continue. Directories through depth 256 are enumerated; deeper
+ordinary directories are counted but produce a depth-limit error. At most 100
+error records are retained, with all errors counted and omissions reported.
+Counter overflow is fatal and returns no totals.
+
+| Exit | Meaning |
+| --- | --- |
+| `0` | Complete under the counting/skip policies, with no observed errors. |
+| `1` | Fatal scan or output failure. |
+| `2` | Invalid CLI syntax. |
+| `3` | Partial scan with observed totals and recoverable errors. |
+
+Text diagnostics go to stderr. JSON stdout contains one versioned object with
+policy, totals, and diagnostic fields; fatal scan results have null totals.
+Parser/output failures may use stderr. Paths use a display string plus a `lossy`
+flag when native names cannot be represented as Unicode. JSON integers preserve
+u64 values; consumers must avoid loss of precision above 2^53. Consumers must
+check both JSON validity and process exit status. The full schema, examples, and
+counting rules live in the [behavior contract](docs/disk-scan-contract.md).
 
 ## Direction
 
-The first feature increment will be a small, read-only disk scanner. Later work
+The first scanner provides logical totals and explicit limitations. Later work
 will address filesystem accounting, links and special files, interactive
 exploration, and Windows storage explanations. Driver work will begin with
 inventory, then supported Windows update discovery and deterministic package
@@ -68,19 +104,22 @@ cargo test --locked
 cargo build --locked
 ```
 
-Bootstrap verification passes on native Apple Silicon with Rust/Cargo 1.99.1:
-formatting, Clippy with warnings denied, 3 unit tests, 4 integration tests,
-build, help, and version. Hosted CI also passes on native Windows x86_64 and
-macOS ARM64. Windows device and filesystem API integrations do not exist yet
-and have not been validated. `Cargo.lock` is included for this binary
-application; retain it in version control. CI uses `--locked` to prevent
-unintended dependency changes.
+Local Apple Silicon checks use Rust/Cargo 1.99.1: formatting, Clippy with
+warnings denied, tests, build, help, and version. Scanner CI results are tracked
+in [PLAN.md](PLAN.md); the earlier
+[foundation CI](https://github.com/dsouzarohan/drisker/actions/runs/42411773487)
+does not verify scanner behavior. `Cargo.lock` is committed and CI uses
+`--locked` to prevent unintended dependency changes.
 
-Unit tests check the CLI definition and parsing. Integration tests execute the
-binary and check output streams, exit status, help, version, and rejection of
-unimplemented commands. They require neither elevated privileges nor access to
-installed hardware. Future filesystem tests will use controlled temporary
-fixtures.
+Tests use controlled temporary directories and deterministic metadata/enumeration
+failures. They cover counting, hard links, partial results, limits, overflow,
+output streams, JSON, and root rejection. Unix fixtures cover links/cycles and a
+socket; the Windows fixture creates a directory junction without elevation and
+checks reparse classification and root rejection. This does not validate every
+reparse tag, cloud provider, network filesystem, or mounted-volume scenario.
+No live hardware inventory or system-directory mutation is needed. The local
+sandbox blocks binding the temporary Unix socket; that test requires a normal
+unsandboxed test run, not administrator access.
 
 ### macOS and Windows workflow
 
@@ -94,24 +133,29 @@ behavior. GitHub Actions supplies an additional native check on each platform.
 ## Repository guide
 
 ```text
-Cargo.toml                         Single binary crate; clap is the only direct dependency
+Cargo.toml                         Single binary crate; clap, serde, and serde_json
 Cargo.lock                         Resolved dependency versions for reproducible builds
 LICENSE                            MIT license
-src/main.rs                        CLI entry point and parser unit tests
-tests/cli.rs                       Binary integration tests
+src/main.rs                        CLI parsing, dispatch, and exit handling
+src/disk.rs                        Scan model, accounting, and traversal
+src/disk/tests.rs                  Scanner fixtures and injected failure tests
+src/output.rs                      Text and JSON rendering
+src/output/tests.rs                Output-contract and write-failure tests
+tests/cli.rs                       Foundation CLI integration tests
+tests/disk_scan.rs                 Scanner binary integration tests
 .github/workflows/ci.yml            Stable Rust checks on Windows and macOS
 PLAN.md                            Immediate increment and verification status
 ROADMAP.md                         Feature-level milestones
 AGENTS.md                          Agent workflow and session continuity
 docs/architecture.md               Boundaries, data flow, and testing strategy
+docs/disk-scan-contract.md          Scanner behavior and output contract
 docs/adr/0001-initial-architecture.md
                                    Initial architectural decision
 ```
 
 ## Safety
 
-Read-only inspection is the default. No system mutation capabilities exist in
-this foundation. An available update does not establish that it should be
+Read-only inspection is the default. No system mutation capabilities exist. An available update does not establish that it should be
 installed; occupied storage does not establish that it is safe to delete.
 
 Future maintenance must discover, inspect, explain, verify, present a concrete

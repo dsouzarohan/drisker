@@ -1,14 +1,13 @@
 # Roadmap
 
-This is a revisable feature backlog, not a release schedule. Milestones describe
-intended outcomes, not implemented functionality. Only the CLI source
-foundation exists today; local checks and native Windows/macOS hosted CI pass
-(see PLAN.md). Product features remain planned.
+This is a revisable feature backlog, not a release schedule. Milestones distinguish completed capabilities from intended outcomes. The CLI
+foundation is merged; the first scanner is implemented on its feature branch
+with local checks passing and native CI pending (see PLAN.md). Later features
+remain planned.
 
 ## 1. Repository foundation and developer experience
 
-- **Status:** Complete in this increment; MIT licensing and continuity updates
-  accompany the already-published CLI foundation.
+- **Status:** Complete; PR #2 merged MIT licensing and continuity updates.
 - **Goal:** An understandable, reproducible starting point.
 - **Capabilities:** Minimal CLI, documentation, unit/integration testing,
   stable Rust formatting/lint/build checks, native Windows and macOS CI.
@@ -27,9 +26,13 @@ foundation exists today; local checks and native Windows/macOS hosted CI pass
 - **Capabilities:** Portable traversal and aggregation, explicit link policy,
   inaccessible-path reporting, useful text output and structured JSON.
 - **Outcome:** A small, correct scanner with controlled fixture coverage.
-- **Dependencies/questions:** Define counting rules, partial-result semantics,
-  filesystem changes during scans, and safe traversal boundaries before coding.
-  Benchmark before adding parallelism.
+- **Progress:** The [first scanner contract](docs/disk-scan-contract.md) defines
+  counting, partial results, live observations, traversal boundaries, output,
+  and limits. Sequential traversal, checked aggregation, text/JSON output, and
+  controlled fixtures are implemented; local checks pass.
+- **Status:** Implementation complete; native CI verification pending.
+- **Dependencies/questions:** Verify the native Windows junction fixture and
+  Windows/macOS CI before closing the increment. Benchmark before parallelism.
 
 ## 3. Filesystem metadata and accounting correctness
 

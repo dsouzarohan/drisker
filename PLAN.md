@@ -2,19 +2,9 @@
 
 ## State at handoff
 
-The repository foundation is complete: one Rust binary crate, clap help/version,
-3 parser unit tests, 4 CLI integration tests, a committed lockfile, MIT licensing,
-and native Windows/macOS CI. No scanner, driver discovery, or maintenance
-operation is implemented. The binary remains `drisker` version `0.1.0`.
-
-The bootstrap and agent instructions are published, including
-[PR #1](https://github.com/dsouzarohan/drisker/pull/1).
-[Foundation CI on main](https://github.com/dsouzarohan/drisker/actions/runs/42411773487)
-passed formatting, Clippy, tests, and builds on Windows x86_64 and macOS ARM64.
-That verifies the CLI foundation, not future Windows filesystem or driver APIs.
-The current foundation-handoff change adds licensing, corrects stale validation
-notes, and establishes session continuity. Check Git and the PR for its actual
-merge state and current validation results.
+The MIT-licensed foundation is merged at `3ed1da4` (PR #2). The feature branch
+implements `drisker disk scan <path> [--json]` in one binary crate, version
+`0.1.0`. Driver discovery and maintenance remain unimplemented.
 
 AGENTS.md holds standing workflow instructions. This is the only execution plan;
 ROADMAP.md holds future features and completed milestone summaries. Codex's
@@ -23,29 +13,29 @@ create repository memory files or parallel feature plans.
 
 ## Next increment: first read-only disk scan
 
-**Status:** Planned, not started. The next action is task 1: settle the behavior
-contract before implementing traversal. No scanner implementation is included
-in the foundation-handoff change.
+**Status:** Contract, model, traversal, output, and fixtures implemented.
+Local checks pass. Native Windows/macOS CI is the remaining verification step;
+do not confuse earlier foundation CI with scanner validation.
 
 **Goal:** `drisker disk scan <path>` reports observed logical bytes and entry
 counts beneath a directory, with clear limitations and partial-result reporting.
 It does not claim allocated disk usage or identify safe-to-delete data.
 
-1. [ ] Define the initial behavior contract with small output examples: accepted
+1. [x] Define the initial behavior contract with small output examples: accepted
    roots, logical-size accounting, hard-link counting, links/reparse points,
    volume boundaries, changes during scanning, and fatal versus partial results.
    Set exit statuses, text/JSON fields, and diagnostic limits before coding.
-2. [ ] Introduce a focused disk module with request/result types and checked
+2. [x] Introduce a focused disk module with request/result types and checked
    aggregation. Keep application results separate from rendering; retain one
    crate and avoid speculative platform traits or a full tree representation.
 3. [ ] Implement sequential read-only traversal with explicit failure reporting.
    Do not follow links or Windows reparse points whose traversal safety is not
    established. Verify metadata handling on native Windows. Resolve depth and
    resource-limit behavior without silently omitting subtrees.
-4. [ ] Expose the working `disk scan <path>` command with text and `--json`
+4. [x] Expose the working `disk scan <path>` command with text and `--json`
    rendering from the same result. Add serialization dependencies only as
    needed; keep progress, styling, and diagnostics off JSON stdout.
-5. [ ] Add controlled temporary fixtures for empty/nested directories, known
+5. [x] Add controlled temporary fixtures for empty/nested directories, known
    byte totals, spaces/Unicode, links, invalid roots, and partial results.
    Cover overflow and error-limit behavior deterministically. Gate native
    cases and avoid reliance on installed hardware or administrator privileges.
@@ -56,3 +46,19 @@ It does not claim allocated disk usage or identify safe-to-delete data.
 Largest-entry views, allocated-size accounting, interactive exploration,
 categorization, and driver work remain later roadmap features. Correctness
 comes before concurrency or caching; measure before optimizing.
+
+## Validation and next action
+
+- Local Apple Silicon / Rust 1.99.1: formatting, Clippy with warnings denied,
+  24 unit tests, 9 binary integration tests, build, help, version, and a JSON
+  scan of `src` pass with locked dependencies.
+- The Unix socket fixture requires an unsandboxed test run; it passes with
+  normal user permissions. No administrator access is needed.
+- Unit tests inject metadata, enumeration, depth, and overflow failures;
+  the same traversal loop is used in production. Native Windows includes a
+  junction fixture; native CI results are pending.
+- No open behavior decisions. Next: push the feature branch, run native CI,
+  fix any platform failures, and record its outcome before refreshing this plan.
+- Unverified scope: arbitrary reparse tags, cloud/network providers, real
+  mounted-volume boundaries, and concurrent path replacement. The contract
+  explicitly describes live observations and no physical containment guarantee.
