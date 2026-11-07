@@ -2,100 +2,123 @@
 
 ## Current implementation and boundaries
 
-Drisker is one Rust binary crate. `src/main.rs` defines a clap parser and prints
-help when invoked without arguments. clap handles help/version flags and
-invalid arguments. Version and description come from Cargo package metadata.
-Output failures when printing default help propagate as `io::Result` rather
-than panicking. There is no application domain implementation yet.
+Drisker is one Rust binary crate with three focused modules:
 
-clap is the only direct dependency. The standard library supplies process-based
-integration tests. There are no empty domain modules, platform implementations,
-plugin infrastructure, databases, background services, or mutation commands.
-The crate currently forbids unsafe code; any future Windows integration that
-requires it must deliberately revisit that restriction and isolate documented
-unsafe boundaries.
+- `src/main.rs`: clap arguments, working-directory capture, dispatch, and process
+  exit handling. Missing top-level arguments show help. `disk scan` requires one
+  root and optionally `--json`; an empty root reaches domain validation.
+- `src/disk.rs`: request/result types, metadata classification, checked counters,
+  error records, and sequential directory traversal. It returns data and never
+  prints. Paths remain native `PathBuf` values.
+- `src/output.rs`: text/JSON rendering and scan exit-status selection. JSON
+  presentation types borrow diagnostic strings and convert native paths into
+  display/lossiness objects. Serialization does not affect the domain model.
 
-## Responsibilities as features arrive
+clap parses arguments; serde and serde_json serialize structured output.
+`tempfile` is a development-only dependency for controlled fixtures. There is no
+library target, workspace, full tree model, platform trait hierarchy, background
+service, or mutation command. Unsafe code remains forbidden.
 
-Add modules only when implementing their responsibilities:
+The [scanner contract](disk-scan-contract.md) defines accounting, boundaries,
+limits, error codes, the JSON schema, and exit statuses. Driver inventory and
+maintenance remain roadmap features.
 
-- **CLI/presentation:** Parse arguments, invoke operations, select text or JSON
-  rendering, manage diagnostics and exit status, and handle interaction.
-- **Disk inspection:** Traverse filesystems, interpret metadata, aggregate
-  sizes, and report results plus limitations. Implement basic traversal and
-  aggregation ourselves for clarity and learning, using portable APIs first.
-- **Driver inspection:** Represent devices, installed drivers, update
-  candidates, provenance, and verification evidence. Start with inventory and
-  supported Windows APIs; keep discovery distinct from compatibility and trust
-  verification.
-- **Platform integration:** Isolate Windows APIs and metadata behind small
-  interfaces and `cfg(windows)` when needed. Keep platform-independent models
-  and calculations free of Windows handles and bindings. Introduce traits only
-  for a demonstrated need, not hypothetical OS backends.
-
-No library crate or additional packages are needed now. When application logic
-appears, move it out of the CLI entry point into focused modules. A library
-target can be added later if consumers or integration tests need one.
-
-## Conceptual inspection data flow
+## Scanner mechanics
 
 ```text
-arguments → validated request → filesystem / supported OS APIs
-          → observations and explicit failures → analysis / verification
-          → result model with evidence and limitations → text or JSON
+arguments → request with captured working directory
+          → root validation → iterative depth-first traversal
+          → Result<ScanSummary, ScanError> → text or JSON → exit status
 ```
 
-Application logic should return data and errors rather than printing. Future
-structured output must contain no styling, progress indicators, or prompts.
-Keep diagnostics and progress off JSON stdout. Establish JSON schemas, partial
-result behavior, and exit-code policy when the first inspection command lands;
-they are not specified by this skeleton.
+`ScanRequest` owns the supplied root and captured working directory. Filesystem
+operations use a joined path; diagnostics retain the supplied root. Trailing
+separators are removed for root classification, without canonicalizing through
+links or changing the reported path. Ancestor links and concurrent replacement
+remain outside any containment guarantee.
 
-Disk totals must identify their accounting policy: logical versus allocated
-size, handling of links and volume boundaries, inaccessible entries, and files
-changing during observation. An incomplete scan must not silently present a
-total as complete. Driver candidates must retain source and applicability
-evidence; unknown compatibility is not verified compatibility.
+`symlink_metadata` observes each entry for classification without following the
+final link. A small `cfg(windows)` block checks the reparse attribute before file
+or directory classification. All reparse tags are skipped. The rest of the walk
+uses safe standard-library APIs on both platforms. See the official
+[symlink_metadata](https://doc.rust-lang.org/std/fs/fn.symlink_metadata.html),
+[Windows MetadataExt](https://doc.rust-lang.org/std/os/windows/fs/trait.MetadataExt.html),
+and [file attribute constants](https://learn.microsoft.com/en-us/windows/win32/fileio/file-attribute-constants)
+references. Path checks and subsequent opens are separate observations; they do
+not prevent filesystem races.
 
-## Safety boundary
+The walk owns a `Vec<Frame<I>>`. Each frame holds a directory iterator, its paths,
+and its depth. A discovered directory pushes a frame; an exhausted iterator pops
+one and releases its handle. There are at most 257 open directory iterators
+(root plus depths 1–256), independent of directory width. Retained path lengths
+still affect memory usage. There is no recursion on Rust's call stack, sorted
+entry buffer, or queue of all pending paths. Ordinary mounts are crossed; any
+cycles not excluded by link policy eventually hit the explicit depth limit.
 
-Inspection is read-only and useful independently of maintenance. Storage usage
-does not establish deletion safety; update availability does not establish
-installation suitability. No mutating feature exists in the bootstrap.
+`scan_with` accepts two private function parameters for metadata and enumeration.
+Production uses filesystem calls; tests inject controlled results into the same
+loop to exercise permission failures, disappearance, iterator errors, overflow,
+and depth limits. This is a concrete test seam, not a public filesystem backend
+abstraction. Its iterator is generic and owned; `use<>` on `read_directory`'s
+return type specifies that the iterator does not borrow the input path.
 
-Future mutation commands require a separate design and explicit user command.
-Their flow is discover, inspect, explain, verify, present a concrete proposal,
-obtain authorization, execute, and report. Do not combine observation with
-automatic cleanup or installation. Privileged and unsafe integrations must be
-small, documented, and reviewable; custom cryptography is excluded.
+Every total and error counter uses checked u64 addition. Recoverable errors are
+counted and the first 100 retained, while traversal continues. Root failures and
+counter overflow return `Err`, discarding the local summary. `Ok` contains either
+complete or partial observations, distinguished by its error count. Policy skips
+are successful observations, not errors. Totals count logical bytes per regular
+file name and never imply allocated usage or deletion safety.
 
-## Verification strategy
+## Rendering and output failures
 
-The built-in Rust test framework is sufficient initially. Parser unit tests
-validate the clap definition and argument policy. Integration tests invoke the
-compiled binary and verify help/version, no-argument behavior, invalid input,
-stdout/stderr, and exit status without depending on exact help formatting.
+Both output modes borrow the same domain result. Text shows exact bytes, counts,
+completion, and limitations on stdout, with retained diagnostics on stderr.
+JSON contains one versioned envelope with policy, nullable totals, recoverable
+errors, and a nullable fatal error. Paths carry a display string and `lossy`
+flag. Control characters are escaped in text and JSON; OS error messages are
+bounded by Unicode scalar count. JSON stdout has no separate progress or prompts.
 
-Future algorithm tests should use controlled temporary directory trees: empty
-and nested directories, regular files, spaces and Unicode in paths, links,
-permission failures, and changes during scans. Gate platform-specific cases;
-permission tests must account for privilege differences. Use fixtures or small
-adapters for device/update data rather than relying on installed hardware,
-live update catalogs, administrator access, or system mutations.
+The renderer uses fallible writers and flushes both streams. A write/flush error
+propagates to the entry point, which exits 1. Output may already be truncated;
+consumers must require valid JSON and inspect the exit status. Scan exits are
+0 (complete), 1 (fatal), and 3 (partial); clap syntax errors use 2.
 
-CI runs formatting, Clippy with warnings denied, unit and integration tests,
-and builds on stable Rust using native Windows x86_64 and macOS ARM64 runners.
-Native Windows API behavior needs native Windows tests. Local macOS checks and
-cross-compilation are useful but cannot substitute for them. Remote Windows
-SSH tooling is deferred until integration work requires it.
+## Verification strategy and limits
 
-## Current limitations and undecided details
+Parser tests validate the CLI shape. Binary integration tests cover help,
+version, invalid arguments, scanner output/streams, root failures, relative
+paths, and a Unix depth-limit partial scan. Domain tests use empty/nested
+temporary trees, known byte totals, hard links, spaces/Unicode, invalid roots,
+and injected failures/limits. Renderer tests compare both example outputs with
+the contract and exercise lossy paths, control characters, large integers,
+partial/fatal fields, and broken writers/flushes.
 
-No scan model, tree representation, Windows bindings, error taxonomy, JSON
-schema, cancellation design, or performance target is implemented. Choose them
-with the first concrete requirements. Prioritize correctness; use profiling
-and benchmarks before parallelism or caching. No minimum Rust version beyond
-using current stable is promised. The project uses the MIT license. Local checks
-pass with locked dependencies, as do the native Windows/macOS hosted CI checks
-linked from PLAN.md. Windows API integrations remain future work requiring
-their own native tests.
+Unix tests cover file/directory/dangling/cyclic links and a socket. Native Windows
+has a junction fixture that verifies reparse classification, skipped traversal,
+and root rejection, without requiring symlink privileges or administrator access.
+Synthetic tests run on both platforms. CI runs formatting, Clippy with warnings
+denied, tests, and builds on stable Rust with native Windows x86_64 and macOS
+ARM64 runners. See PLAN.md for the actual validation evidence.
+
+A junction fixture is not exhaustive validation of reparse tags, cloud files,
+network providers, mounted volumes, or concurrent path replacement. Live reads
+are not snapshots. Local sandbox restrictions can prevent Unix socket fixture
+creation; a normal unsandboxed test run is required for that fixture. Linux
+support, graceful cancellation, allocated-size accounting, identity-based
+hard-link deduplication, and performance targets remain deferred. Profile before
+introducing parallelism or caching.
+
+## Safety and future boundaries
+
+Inspection only enumerates names and reads metadata; it does not open file
+contents. No mutating feature exists. OS/provider side effects of metadata reads
+are outside that read-only guarantee. Windows behavior requires native tests;
+a macOS build or cross-compilation cannot establish it.
+
+Future driver inspection will keep inventory, discovery, compatibility, and
+trust verification distinct, with supported OS APIs and source evidence. Add
+modules and platform interfaces only when implementing concrete responsibilities.
+Future mutation requires a separate design and explicit authorization:
+discover, inspect, explain, verify, propose, authorize, execute, and report.
+Unavailable compatibility is not verified compatibility, and storage totals do
+not establish deletion safety.

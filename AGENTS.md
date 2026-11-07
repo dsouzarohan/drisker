@@ -9,9 +9,10 @@ A Windows-first system inspection and maintenance CLI written in Rust. Help
 users understand their systems before deciding whether to change anything.
 Inspection and explanation are useful on their own.
 
-The current implementation is a single binary crate with clap, help/version
-output, and CLI tests. Disk scanning, driver discovery, and maintenance are
-not implemented. Do not present roadmap features as available commands.
+The current implementation is a single binary crate with clap, help/version,
+and a read-only `disk scan <path>` command with text/JSON output. Its behavior
+is defined in `docs/disk-scan-contract.md`. Driver discovery and maintenance
+are not implemented. Do not present roadmap features as available commands.
 
 This is also a Rust and systems learning project. Explain meaningful ownership,
 data-structure, and OS API choices in the context of the change. Keep code and

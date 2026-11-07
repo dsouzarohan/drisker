@@ -1,14 +1,14 @@
 # Roadmap
 
-This is a revisable feature backlog, not a release schedule. Milestones describe
-intended outcomes, not implemented functionality. Only the CLI source
-foundation exists today; local checks and native Windows/macOS hosted CI pass
-(see PLAN.md). Product features remain planned.
+This is a revisable feature backlog, not a release schedule. Milestones
+distinguish completed capabilities from intended outcomes. The CLI
+foundation is merged; the first scanner is implemented and verified in
+[PR #3](https://github.com/dsouzarohan/drisker/pull/3), awaiting merge. Later
+features remain planned (see PLAN.md for the next action).
 
 ## 1. Repository foundation and developer experience
 
-- **Status:** Complete in this increment; MIT licensing and continuity updates
-  accompany the already-published CLI foundation.
+- **Status:** Complete; PR #2 merged MIT licensing and continuity updates.
 - **Goal:** An understandable, reproducible starting point.
 - **Capabilities:** Minimal CLI, documentation, unit/integration testing,
   stable Rust formatting/lint/build checks, native Windows and macOS CI.
@@ -27,9 +27,17 @@ foundation exists today; local checks and native Windows/macOS hosted CI pass
 - **Capabilities:** Portable traversal and aggregation, explicit link policy,
   inaccessible-path reporting, useful text output and structured JSON.
 - **Outcome:** A small, correct scanner with controlled fixture coverage.
-- **Dependencies/questions:** Define counting rules, partial-result semantics,
-  filesystem changes during scans, and safe traversal boundaries before coding.
-  Benchmark before adding parallelism.
+- **Progress:** The [first scanner contract](docs/disk-scan-contract.md) defines
+  counting, partial results, live observations, traversal boundaries, output,
+  and limits. Sequential traversal, checked aggregation, text/JSON output, and
+  controlled fixtures are implemented. Local Apple Silicon checks pass (24 unit
+  and 9 integration tests). Native Windows x86_64/macOS ARM64
+  [scanner CI](https://github.com/dsouzarohan/drisker/actions/runs/42418864283)
+  passes at `6158e1a`, including Windows junction metadata/skip/root checks.
+- **Status:** Increment complete in PR #3; awaiting diff review and merge.
+- **Dependencies/questions:** Arbitrary reparse tags, cloud/network providers,
+  mounted-volume fixtures, and concurrent replacement are not comprehensively
+  verified. These limitations remain explicit. Benchmark before parallelism.
 
 ## 3. Filesystem metadata and accounting correctness
 

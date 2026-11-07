@@ -18,7 +18,7 @@ fn help_succeeds_on_stdout() {
         assert!(help.contains("Usage: drisker"));
         assert!(help.contains("--help"));
         assert!(help.contains("--version"));
-        assert!(help.contains("not implemented yet"));
+        assert!(help.contains("disk"));
     }
 }
 
