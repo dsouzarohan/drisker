@@ -1,0 +1,12 @@
+[package]
+name = "drisker"
+version = "0.1.0"
+edition = "2024"
+description = "A Windows-first system inspection and maintenance CLI"
+publish = false
+
+[dependencies]
+clap = { version = "4.5", features = ["derive"] }
+
+[lints.rust]
+unsafe_code = "forbid"
