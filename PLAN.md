@@ -57,8 +57,11 @@ comes before concurrency or caching; measure before optimizing.
 - Unit tests inject metadata, enumeration, depth, and overflow failures;
   the same traversal loop is used in production. Native Windows includes a
   junction fixture; native CI results are pending.
-- No open behavior decisions. Next: push the feature branch, run native CI,
-  fix any platform failures, and record its outcome before refreshing this plan.
+- [PR #3](https://github.com/dsouzarohan/drisker/pull/3) contains the scanner diff.
+  Initial hosted macOS checks pass; native Windows junction classification and
+  traversal tests pass. Windows found a CRLF-sensitive documentation-example
+  test, now normalized before extraction. Next: verify the corrected revision
+  in native CI and record the outcome before refreshing this plan.
 - Unverified scope: arbitrary reparse tags, cloud/network providers, real
   mounted-volume boundaries, and concurrent path replacement. The contract
   explicitly describes live observations and no physical containment guarantee.

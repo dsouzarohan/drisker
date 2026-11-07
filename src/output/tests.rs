@@ -23,7 +23,7 @@ fn complete_example_matches_contract() {
         },
         ..ScanSummary::default()
     });
-    let contract = include_str!("../../docs/disk-scan-contract.md");
+    let contract = include_str!("../../docs/disk-scan-contract.md").replace("\r\n", "\n");
     let example = contract
         .split("```json\n")
         .nth(1)
